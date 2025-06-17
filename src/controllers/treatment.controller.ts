@@ -108,11 +108,11 @@ export const createTreatment = async (req: Request, res: Response) => {
 // Obtener todos los tratamientos (activos)
 export const getTreatments = async (req: Request, res: Response) => {
   try {
-    // const { category } = req.query;
+    // const { category } = req.query;s
     // const filter = { isActive: true };
     // if (category) filter['category'] = category as string;
 
-    const treatments = await Treatment.find();
+    const treatments = await Treatment.find({ isActive: true });
     sendResponse({
       res,
       message: 'Tratamientos obtenidos',

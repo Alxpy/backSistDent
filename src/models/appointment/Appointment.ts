@@ -4,10 +4,10 @@ import { IAppointment } from "./IAppointment";
 const appointmentSchema = new Schema<IAppointment>({
   patient: { type: Schema.Types.ObjectId, ref: 'Patient', required: true },
   dentist: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  treatment: { type: Schema.Types.ObjectId, ref: 'Treatment' }, // Opcional
+  treatment: { type: Schema.Types.ObjectId, ref: 'Treatment' },
   startTime: { type: Date, required: true },
-  duration: { type: Number, required: true }, // Duración en minutos
-  endTime: { type: Date, required: true }, // Calculado automáticamente
+  duration: { type: Number, required: true },
+  endTime: { type: Date, required: true },
   status: {
     type: String,
     enum: ['scheduled', 'completed', 'cancelled', 'no-show'],

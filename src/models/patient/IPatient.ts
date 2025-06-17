@@ -1,20 +1,32 @@
 
+
+export type TMedicalRecordType = 
+  | 'allergy' 
+  | 'chronic_disease' 
+  | 'surgery' 
+  | 'medication' 
+  | 'other';
+
+export interface IMedicalRecord {
+  type: TMedicalRecordType;
+  name: string;
+  severity: 'low' | 'medium' | 'high';
+  notes?: string;
+}
 export interface IPatient {
   name: string;
   ci: string;
   birthDate?: Date;
   gender: 'male' | 'female' | 'other' | 'unspecified';
-  phone: string; // Formato: +59171234567
+  phone: string;
   email?: string;
   address?: {
     city: string;
     zone?: string;
     street?: string;
   };
-  allergies: string[];
-  medicalNotes?: string;
-  dentalNotes?: string;
-  // clinicId: Types.ObjectId;
+  medicalRecords: IMedicalRecord[]
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

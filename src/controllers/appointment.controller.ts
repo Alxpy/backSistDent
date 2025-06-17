@@ -23,7 +23,6 @@ const appointmentSchema = z.object({
 // Crear cita
 export const createAppointment = async (req: Request, res: Response) => {
   try {
-    console.log(req.body);
 
     const { success, data, error } = appointmentSchema.safeParse(req.body);
     if (!success) {
@@ -248,8 +247,6 @@ export const getAppointmentById = async (req: Request, res: Response) => {
     const appointment = await Appointment.findById(id).populate(
       "patient treatment"
     );
-
-    console.log(appointment);
 
     if (!appointment) {
       return sendResponse({

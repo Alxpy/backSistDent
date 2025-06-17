@@ -15,7 +15,7 @@ router.post('/', createPatient);
 router.get('/', getPatients);
 router.get('/:id', getPatientById)
 router.get('/search/:query', isAuth, searchPatient);
-router.patch('/:id', isAuth, updatePatient);
+router.put('/:id', isAuth, updatePatient);
 router.delete('/:id', isAuth, deletePatient);
 
 export default router;

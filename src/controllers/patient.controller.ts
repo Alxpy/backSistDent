@@ -2,58 +2,62 @@ import { Request, Response } from "express";
 import { sendResponse } from "../utils/response";
 import { z } from "zod";
 import Patient from "../models/patient/Patient";
+import Appointment from "../models/appointment/Appointment";
 
-// Esquema de validación con Zod
-const patientSchema = z.object({
+const medicalRecordSchema = z.object({
+  type: z.enum([
+    "allergy",
+    "chronic_disease",
+    "surgery",
+    "medication",
+    "other",
+  ]),
   name: z.string().min(2, "Nombre demasiado corto"),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+  diagnosisDate: z.string().datetime().optional(), // ISO 8601
+  notes: z.string().optional(),
+});
+
+export const createPatientSchema = z.object({
+  name: z.string().min(3, "Nombre demasiado corto"),
   ci: z.string().regex(/^[0-9]{7,10}$/, "CI no válido"),
-  phone: z.string().regex(/^(\+591|0)[67][0-9]{7}$/, "Teléfono no válido"),
+  birthDate: z.string(),
+  gender: z.enum(["male", "female", "other", "unspecified"]),
+  phone: z.string().regex(/^\+591[67]\d{7}$/, "Teléfono no válido"),
+  email: z.string().email().optional(),
+  address: z
+    .object({
+      city: z.string().min(2),
+      zone: z.string().optional(),
+      street: z.string().optional(),
+    })
+    .optional(),
+  medicalRecords: z.array(medicalRecordSchema).optional(),
 });
 
 // Crear paciente
 export const createPatient = async (req: Request, res: Response) => {
   try {
-    // const { success, data, error } = patientSchema.safeParse(req.body);
-    const {
-      address,
-      allergies,
-      birthDate,
-      ci,
-      email,
-      dentalNotes,
-      gender,
-      phone,
-      medicalNotes,
-      name,
-    } = req.body;
 
-    // if (!success) {
-    //   return sendResponse({
-    //     res,
-    //     status: 400,
-    //     message: "Datos inválidos",
-    //     error,
-    //   });
-    // }
+    const validation = createPatientSchema.safeParse(req.body);
+    if (!validation.success) {
+      return sendResponse({
+        res,
+        status: 400,
+        message: "Datos inválidos",
+        error: validation.error.errors,
+      });
+    }
 
-    console.log(address)
+    const patientData = {
+      ...validation.data,
+      birthDate: validation.data.birthDate
+        ? new Date(validation.data.birthDate)
+        : undefined,
+      medicalRecords: validation.data.medicalRecords,
+    };
 
-    const patient = await Patient.create({
-      address: {
-        street: address.street,
-        city: address.city,
-        state: address.state,
-      },
-      allergies,
-      birthDate,
-      ci,
-      email,
-      dentalNotes,
-      gender,
-      phone,
-      name,
-      medicalNotes,
-    });
+    const patient = await Patient.create(patientData);
 
     sendResponse({
       res,
@@ -83,7 +87,7 @@ export const getPatients = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const patients = await Patient.find()
+    const patients = await Patient.find({ isActive: true }) // Solo pacientes activos
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -101,7 +105,8 @@ export const getPatients = async (req: Request, res: Response) => {
 export const getPatientById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const patient = await Patient.findById(id);
+    const patient = await Patient.findById(id).lean();
+
     if (!patient) {
       return sendResponse({
         res,
@@ -109,7 +114,20 @@ export const getPatientById = async (req: Request, res: Response) => {
         message: "Paciente no encontrado",
       });
     }
-    sendResponse({ res, message: "Paciente encontrado", data: patient });
+
+    const appointments = await Appointment.find({
+      patient: id,
+      status: { $ne: "cancelled" },
+    })
+      .populate("treatment")
+      .lean();
+
+    const data = {
+      ...patient,
+      treatments: appointments.map((appointment) => appointment.treatment),
+    };
+
+    sendResponse({ res, message: "Paciente encontrado", data });
   } catch (error) {
     sendResponse({
       res,
@@ -118,7 +136,7 @@ export const getPatientById = async (req: Request, res: Response) => {
       error,
     });
   }
-}
+};
 
 // Buscar paciente por CI o nombre
 export const searchPatient = async (req: Request, res: Response) => {

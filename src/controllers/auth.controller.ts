@@ -7,22 +7,40 @@ import Role from "../models/role/Role";
 import { IRole } from "../models/role/IRole";
 import { JWT_SECRET } from "../config";
 
-// Tipos
-interface LoginBody {
-  email: string;
-  password: string;
+export const generateAdminUser = async () => {
+  try {
+    
+    const adminRole = await Role.findOne({ name: "admin" });
+
+    if (!adminRole) {
+      return console.log("El rol de administrador no existe.");
+    }
+
+    const adminUser = await User.findOne({ email: "alexanderk92c@gmail.com" });
+    if (adminUser) {
+      console.log("El usuario administrador ya existe.");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash("1234567", 10);
+
+    const newUser = new User({
+      firstName: "Alex",
+      lastName: "Admin",
+      email: "alexanderk92c@gmail.com",
+      password: hashedPassword,
+      role: adminRole._id,
+    });
+
+    await newUser.save();
+
+    console.log("Usuario administrador creado exitosamente.");
+  } catch (error) {
+    console.log("Error generating admin user:", error);
+  }
 }
 
-interface RegisterBody {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: string; // ID del rol
-}
-
-// Login
-export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -58,10 +76,7 @@ export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
 };
 
 // Registro
-export const register = async (
-  req: Request<{}, {}, RegisterBody>,
-  res: Response
-) => {
+export const register = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
 

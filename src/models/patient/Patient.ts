@@ -14,7 +14,7 @@ const patientSchema = new Schema<IPatient>(
       required: true,
     },
     address: {
-      city: { type: String, required: true },
+      city: { type: String, default: "" },
       zone: { type: String, default: "" },
       street: { type: String, default: "" },
     },
